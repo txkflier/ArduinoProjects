@@ -1,0 +1,78 @@
+Arduino Nano and STM32F103 BluePill input and output pins and function:
+
+
+Data input:
+Alt 1: PWM (Servo type signal from any Rx output).
+or  2: SRXL2 input from a master Rx
+If you need serialaRx from a remote satellite Rx, you must checkout some older version from git.
+
+Input type is auto detected, if SRXL2 fails we fallback to PWM.
+
+Input connections, for Arduino Nano or STM32F103 BluePill (BP), via for example a std servo cable:
+        Nano BP
+        Rx0  PA10 UART Rx. Data signal input for PWM and SRXL2.
+        Tx1  PA9  UART Tx. Schottky diode connected to Rx0/PA10. (BAT85 for example).
+        +5V  +5V  Power from main Rx or BEC
+        GND  GND
+
+     LED Controller                  RC Receiver
+     UART Tx  ----|<|-----o
+                          |
+     UART Rx  ------------o--------- PWM/SRXL2_DATA
+     +5V      ---------------------- +5V
+     GND      ---------------------- GND
+
+Above is only for Arduino Nano and STM32F103 using the Dan Drown Board Support package.
+The STM32F1duino BSP supports internal serial halfduplex, so the external diod can be omitted.
+
+     UART1 Tx PA9  ----------------- PWM/SRXL2_DATA
+     +5V           ----------------- +5V
+     GND           ----------------- GND
+
+
+For SRXL2, Use the Bind/Prog/SRXL2 port on the Rx
+
+
+Otput pins and LED functions.
+
+LED   Outputs    Function       PWM limit(uS)  Usage
+      Nano BP
+  1     D2 PB12, ACL_STROBE,    1400           Heli anti collition white tripple strobe
+  2     D3 PB13, ACL_STROBE,    1400           Heli anti collition white tripple strobe
+  3     D4 PB14, POS_LIGHT,     1300           Red
+  4     D5 PB15, ACL_STROBE,    1400           Heli anti collition white tripple strobe
+  5     D6 PB5 , POS_LIGHT,     1300           Green
+  6     D7 PB6 , ACL_STROBE,    1400           Heli anti collition white tripple strobe
+  7     D8 PB7 , POS_LIGHT,     1300           White
+  8     D9 PB8 , BEACON,        -              Red slow fading beacon. allways on when powered
+  9    D10 PB9 , BEACON,        1200           Red belly fading beacon, slightly faster.
+ 10    D11 PB10, LANDING_LIGHT, 1500           White landing lights
+ 11    D12 PB11, LANDING_LIGHT, 1500           White landing lights
+ 12    D13 PC13, BACKUP_LIGHT,  1700           White backup/reverse lights, (On board LED also)
+
+The PWM timing intervals in sequnce:
+1000 - 1199 all off except beacon on D9, power on indicator.
+1200 - 1299 Beacon on D10, plus above.
+1300 - 1399 Position lights, plus all above.
+1400 - 1499 ACL strobes, plus all above.
+1500 - 1699 Landing lights, plus all above.
+1700 - 2000 Backup/reverse lights, plus all above.
+
+Set PWM pulse width for each position the Tx switch you want to use, to select what lights comes on or off.
+With a 6 position switch, like the S1 - S6 push buttons on TX16s, you have full control of each step.
+With only a two or three position switch, you have to choose what ligths come on and off in each position.
+
+
+One practical way of connecting the LEDs are to take a 90 degree angled 2x12 pin header. Solder a wire 
+across all top pins and cut off the 90 degree angle, thus creating a gnd rail on the upper pins. 
+Remaining lower 90 degreee angled pins are soldered onto the Arduino Nano output holes D2 - D12. 
+Pin 12 will end up in the mounting hole in the corner. D13 output are on the opposite side and needs 
+a short wire over to pin 12 in the header. 
+Connect the ground rail wire to the GND hole close to D2 on the Arduino Nano.
+
+LEDs will need serial resistors built into their cableing, 100 ohms or so for std bright LEDS. Be sure to stay at 15-20mA each. Arduino outputs can take 40mA, but give it some headroom if you use many LEDs. If you need more juice, you will need to built external power buffers.
+
+A box for the LED controller can be 3D-printed using STL files in "RC LED Controller Box.zip".
+
+
+

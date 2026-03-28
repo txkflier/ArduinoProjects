@@ -1,10 +1,3 @@
-//#pragma once
-//
-//#define SRXL2_PORT_BAUDRATE_DEFAULT    115200
-//#define SRXL_SUPPORTED_BAUD_RATES SRXL2_PORT_BAUDRATE_DEFAULT
-
-#define SRXL_CRC_OPTIMIZE_MODE SRXL_CRC_OPTIMIZE_SPEED
-
 /*
 MIT License
 Copyright (c) 2019 Horizon Hobby, LLC
@@ -30,6 +23,8 @@ SOFTWARE.
 #ifndef _SRXL_CONFIG_H_
 #define _SRXL_CONFIG_H_
 
+#define SRXL_CRC_OPTIMIZE_MODE SRXL_CRC_OPTIMIZE_SPEED
+
 //### USER PROVIDED HEADER FUNCTIONS AND FORWARD DECLARATIONS ###
 
 #ifdef __cplusplus
@@ -37,10 +32,11 @@ extern "C" {
 #endif
 
 // User included headers/declarations to access interface functions required below
-#include "uart.h"
 void userProvidedFillSrxlTelemetry(SrxlTelemetryData* pTelemetry);
 void userProvidedReceivedChannelData(SrxlChannelData* pChannelData, bool isFailsafe);
 void userProvidedHandleVtxData(SrxlVtxData* pVtxData);
+void uartSetBaud(uint8_t uart, uint32_t baudRate);
+void uartTransmit(uint8_t uart, uint8_t* pBuffer, uint8_t length);
 
 //### USER CONFIGURATION ###
 
@@ -52,13 +48,21 @@ void userProvidedHandleVtxData(SrxlVtxData* pVtxData);
 //    Flight Controller = 0x31 (or possibly 0x30 if connected to Base Receiver instead of Remote Receiver)
 //    Smart ESC = 0x40
 //    VTX = 0x81
-// NOTE: This value is not used internally -- it is passed as a parameter to srxlInit() in the example app
-#define SRXL_DEVICE_FC              0x31
-#define SRXL_DEVICE_ESC             0x40
-#define SRXL_DEVICE_VTX             0x81
 
-#define SRXL_DEVICE_ID              (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_SRXLServo1])
-#define SRXL_REQ_DEVICE_ID          (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_None])     
+// Available Device Types
+#define SRXL_DEVICE_NONE       (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_None])
+#define SRXL_DEVICE_BASE_RX    (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_Receiver])
+#define SRXL_DEVICE_REMOTE_RX  (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_RemoteReceiver])
+#define SRXL_DEVICE_FC         (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_FlightController])
+#define SRXL_DEVICE_ESC        (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_ESC])
+#define SRXL_DEVICE_SERVO1     (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_SRXLServo1])
+#define SRXL_DEVICE_SERVO2     (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_SRXLServo2])
+#define SRXL_DEVICE_VTX        (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_VTX])
+#define SRXL_DEVICE_BRDC       (SRXL_DEFAULT_ID_OF_TYPE[SrxlDevType_Broadcast])
+
+// Select actual Device id to use from above list.
+#define SRXL_DEVICE_ID         SRXL_DEVICE_SERVO1
+#define SRXL_REQ_DEVICE_ID     SRXL_DEVICE_FC
 
 // Set this to the desired priority level for sending telemetry, ranging from 0 to 100.
 // Generally, this number should be 10 times the number of different telemetry packets to regularly send.
@@ -67,12 +71,12 @@ void userProvidedHandleVtxData(SrxlVtxData* pVtxData);
 // For example, if you had two normal priority messages and one that you plan to send twice as often as those,
 // you could set the priority to 40 (10 + 10 + 2*10)
 // NOTE: This value is not used internally -- it is passed as a parameter to srxlInit() in the example app
-#define SRXL_DEVICE_PRIORITY        0
+#define SRXL_DEVICE_PRIORITY        0 // No SRXL2 telemtry over this device
 
 // Set these information bits based on the capabilities of the device.
 // The only bit currently applicable to third-party devices is the SRXL_DEVINFO_FWD_PROG_SUPPORT flag,
 // which should be set if you would like to allow Forward Programming of the device via SRXL pass-through.
-#define SRXL_DEVICE_INFO            (SRXL_DEVINFO_NO_RF)
+#define SRXL_DEVICE_INFO            (SRXL_DEVINFO_NO_RF)//SRXL_DEVINFO_NO_RF
 
 // Set this value to 0 for 115200 baud only, or 1 for 400000 baud support
 #define SRXL_SUPPORTED_BAUD_RATES   0
@@ -121,10 +125,8 @@ static inline void srxlSendOnUart(uint8_t uart, uint8_t* pBuffer, uint8_t length
 // could be used if you would prefer to just populate that with the next outgoing telemetry packet.
 static inline void srxlFillTelemetry(SrxlTelemetryData* pTelemetryData)
 {
-#ifdef SRXL_INCLUDE_VTX_CODE
     //memcpy(pTelemetryData, srxlTelemData, sizeof(SrxlTelemetryData));
-    userProvidedFillSrxlTelemetry(pTelemetryData);
-#endif
+    //userProvidedFillSrxlTelemetry(pTelemetryData);
 }
 
 // User-provided callback routine that is called whenever a control data packet is received:
@@ -149,9 +151,7 @@ static inline bool srxlOnBind(SrxlFullID device, SrxlBindData info)
 // User-provided callback routine to handle reception of a VTX control packet.
 static inline void srxlOnVtx(SrxlVtxData* pVtxData)
 {
-#ifdef SRXL_INCLUDE_VTX_CODE
-    userProvidedHandleVtxData(pVtxData);
-#endif
+    //userProvidedHandleVtxData(pVtxData);
 }
 
 // Optional user-provided callback routine to handle Forward Programming command locally if supported
